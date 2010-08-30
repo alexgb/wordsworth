@@ -1,0 +1,109 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>Wordsworth</title>
+	<meta name="author" content="Alex Gibbons">
+	<!-- Date: 2010-08-02 -->
+	
+	<link href='http://fonts.googleapis.com/css?family=Nobile' rel='stylesheet' type='text/css'>
+	
+
+  <style type="text/css" media="screen">
+    body {
+      background-image:url('images/background.png');
+    }
+
+    .message {
+      font-family: 'Nobile', arial, serif;
+      font-size: 18pt;
+      color: white;
+    }
+    
+    textarea.input {
+      text-align:center;
+      outline:none;
+      overflow: visible;
+    }
+  </style>
+	
+	<script src="scripts/vendor/raphael.1.4.7.js" type="text/javascript" charset="utf-8"></script>
+	<script src="scripts/vendor/mootools.1.2.4-core-yc.js" type="text/javascript" charset="utf-8"></script>
+	<script src="scripts/vendor/inline_edit.js" type="text/javascript" charset="utf-8"></script>
+	<script src="scripts/vendor/socket.io.js" type="text/javascript" charset="utf-8"></script>
+	<script src="scripts/vendor/md5.js" type="text/javascript" charset="utf-8"></script>
+	
+	<script src="scripts/app.js" type="text/javascript" charset="utf-8"></script>
+	<script src="scripts/text_node.js" type="text/javascript" charset="utf-8"></script>
+	<script src="scripts/text_circle.js" type="text/javascript" charset="utf-8"></script>
+	<script src="scripts/message.js" type="text/javascript" charset="utf-8"></script>
+	<script src="scripts/messanger.js" type="text/javascript" charset="utf-8"></script>
+	
+	<script type="text/javascript" charset="utf-8">
+	  /*globals Raphael Element App io $merge */
+	  
+	  window.addEvent('domready', function() {
+	  
+	    // message received handler
+  	  function onMessage(obj) {
+  	    if ('message' in obj) {
+  	      var m = obj.message[1];
+  	      
+	        App.Messanger.setMessage(m);
+  	    }
+  	    if ('announcement' in obj) {
+  	      var numClients = obj.announcement.numberOfClients,
+  	          title;
+  	      title =  "Wordsworth (";
+  	      title += numClients + " client";
+  	      title += numClients > 1 ? 's' : '';
+  	      title += " connected)";
+  	      document.title = title;
+  	    }
+  	  }
+  
+      // setup socket.io
+      var socket = new io.Socket(null, {port: 8123});
+      socket.connect();
+      
+      socket.on('connect', function() {
+        App.Messanger.setAuthor(socket.transport.sessionid);
+      });
+      
+      socket.on('message', function(data){
+        var obj = JSON.parse(data);
+        onMessage(obj);
+      });
+      
+      
+      // document event initialization
+      function sendMessage(obj){
+        socket.send(JSON.encode(obj));
+      }
+      
+  	  document.addEvent('click', function(e) {
+  	    if (e.target === document.documentElement) {
+  	      var config = {
+  	        x: e.page.x,
+  	        y: e.page.y,
+            author: socket.transport.sessionid || 'LOCAL'
+  	      };
+  	      
+  	      var id = App.Messanger.createMessage(config);
+          sendMessage($merge(config, {id: id}));
+  	    }
+  	  });
+  	  
+  	  App.Messanger.addEvent('update', function(message) {
+  	    sendMessage(message);
+  	  });
+  	  
+    });
+  	  
+	</script>
+</head>
+<body>
+  <!-- used to preload font, otherwise can't calculate text sizing appropriately for first draw event -->
+  <p style="font-family: 'Nobile'; visibility:hidden;">preload</p>
+</body>
+</html>
