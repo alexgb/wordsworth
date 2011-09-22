@@ -84,7 +84,7 @@
       }
       
   	  document.addEvent('click', function(e) {
-  	    if (e.target === document.documentElement) {
+  	    if (e.target === document.documentElement || e.target === App.TextCircle.paper.canvas) {
   	      var config = {
   	        x: e.page.x,
   	        y: e.page.y,
