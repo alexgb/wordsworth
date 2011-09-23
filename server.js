@@ -1,29 +1,24 @@
-var http = require('http'), 
+var port = 8123,
+    http = require('http'), 
 		url = require('url'),
 		fs = require('fs'),
-		io = require('./vendor/socket.io-node/'),
+		io = require('socket.io').listen(port),
 		sys = require('sys'),
-		
-server = http.createServer();
+		numClients = 0;
 
-server.listen(8123);
 
-var numClients = 0,
-    json = JSON.stringify,
-		io = io.listen(server);
-		
-io.on('connection', function(client){
-	client.on('message', function(message){
-		client.broadcast(json({ message: [client.sessionId, JSON.parse(message)] }));
+io.set('log level', 1);
+
+io.sockets.on('connection', function(client){
+	client.on('messageupdate', function(message){
+    client.broadcast.emit('messageupdate', {message: JSON.parse(message)});
 	});
-});
-
-io.on('clientConnect', function(client) {
-  numClients++;
-  io.broadcast(json({ announcement: { msg: client.sessionId + ' connected', numberOfClients: numClients }}));
-});
-
-io.on('clientDisconnect', function(client) {
-  numClients--;
-  io.broadcast(json({ announcement: { msg: client.sessionId + ' disconnected', numberOfClients: numClients }}));
+	
+	numClients++;
+  io.sockets.emit('announcement', {numberOfClients: numClients});
+  
+  client.on('disconnect', function() {
+    numClients--;
+    io.sockets.emit('announcement', {numberOfClients: numClients});
+  });
 });
